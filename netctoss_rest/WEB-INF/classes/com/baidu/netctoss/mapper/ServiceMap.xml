@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//ibatis.apache.org//DTD Mapper 3.0//EN"      
+ "http://ibatis.apache.org/dtd/ibatis-3-mapper.dtd">
+<mapper namespace="com.baidu.netctoss.dao.ServiceMapperDao">
+	<!-- 根据查询条件，查找业务账号 -->
+	<select id="findByConditions"
+			parameterType="com.baidu.netctoss.vo.ServicePage"
+			resultType="com.baidu.netctoss.vo.ServiceLine">
+		select *
+		from (select t.*,rownum rn
+			  from (select  s.id, 
+						a.id account_id, 
+						a.idcard_no, 
+					    a.real_name, 
+					    s.os_username, 
+					    s.status, 
+					    s.unix_host, 
+					    c.name cost_name, 
+					    c.descr cost_descr
+				from service s 
+					   join account a on (s.account_id=a.id)
+		 			   join cost c on(s.cost_id=c.id)
+				
+				<trim prefix="where" prefixOverrides="and|or">
+					<if test='os_username!=null and os_username!=""'>
+						and s.os_username=#{os_username}
+					</if>
+					<if test='unix_host!=null and unix_host!=""'>
+						and s.unix_host=#{unix_host}
+					</if>
+					<if test='idcard_no!=null and idcard_no!=""'>
+						and a.idcard_no=#{idcard_no}
+					</if>
+					<if test='!"-1".equals(status)'>
+						and s.status=#{status}
+					</if>
+				</trim>
+				order by s.id
+			  )t
+		 )
+		 where rn&gt;=#{start} and rn&lt;#{end}
+	</select>
+	<!-- 查找满足conditions的数据总条数rows -->
+	<select id="countRowsByConditions"
+			parameterType="com.baidu.netctoss.vo.ServicePage"
+			resultType="java.lang.Integer">
+		select count (*) 
+		from service s join account a on (s.account_id=a.id)
+		<where>
+			<if test='os_username!=null and os_username!=""'>
+				and s.os_username=#{os_username}
+			</if>
+			<if test='unix_host!=null and unix_host!=""'>
+				and s.unix_host=#{unix_host}
+			</if>
+			<if test='idcard_no!=null and idcard_no!=""'>
+				and a.idcard_no=#{idcard_no}
+			</if>
+			<if test='!"-1".equals(status)'>
+				and s.status=#{status}
+			</if>
+		</where>
+	</select>
+	<!-- 将指定id的service项目从开通设置为暂停 -->
+	<update id="pauseById"
+			parameterType="java.lang.Integer">
+		update service set status='1',pause_date=sysdate
+		where id=#{id}
+	</update>
+	<!-- 将指定id的service项目从暂停设置为开通 -->
+	<update id="startById"
+			parameterType="java.lang.Integer">
+		update service set status='0',pause_date=null
+		where id=#{id}
+	</update>
+	<!-- 根据id删除 -->
+	<update id="deleteById"
+			parameterType="java.lang.Integer">
+		update service set status='2',close_date=sysdate
+		where id=#{id}
+	</update>
+	<!-- 根据id查看详情 -->
+	<select id="findById"
+			parameterType="java.lang.Integer"
+			resultType="com.baidu.netctoss.vo.ServiceLine">
+		select  s.id,
+				s.account_id, 
+				a.real_name,
+				a.idcard_no,
+				s.unix_host,
+				s.os_username,
+				s.status,
+				s.create_date,
+				s.cost_id,
+				c.name cost_name,
+				c.descr cost_descr
+		from service s 
+			join account a on (s.account_id=a.id) 
+			join cost c on(s.cost_id=c.id)
+		where s.id=#{id}
+	</select>
+	<!-- 根据业务账号id修改资费类型 --><!-- todo -->
+	<update id="updateService"
+			parameterType="com.baidu.netctoss.vo.ServiceLine">
+		update service 
+			set cost_id=#{cost_id}
+		where id=#{id}
+	</update>
+	
+	
+	<!--新增业务账号-->
+	<insert id="addService"
+			parameterType="com.baidu.netctoss.entity.Service">
+		insert into service 
+			(id,
+			account_id,
+			unix_host,
+			os_username,
+			login_passwd,
+			status,
+			create_date,
+			cost_id)
+		values(
+			service_seq.nextval,
+			#{account_id},
+			#{unix_host},
+			#{os_username},
+			#{login_passwd},
+			0,
+			sysdate,
+			#{cost_id})
+	</insert>
+</mapper>

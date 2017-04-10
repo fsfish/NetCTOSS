@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//ibatis.apache.org//DTD Mapper 3.0//EN"      
+ "http://ibatis.apache.org/dtd/ibatis-3-mapper.dtd">
+<mapper namespace="com.baidu.netctoss.dao.TestDeptMapperDao">
+	<!-- 法一，通过多个sql语句 -->
+	<select id="findDeptByNo"
+		parameterType="java.lang.Integer"
+		resultMap="deptMap">
+		select * from test_dept
+		where dept_no=#{no}
+	</select>
+	<resultMap  type="com.baidu.netctoss.entity.TestDept" 
+			    id="deptMap">
+		<id property="dept_no" column="dept_no"/>
+		<collection property="emps" 
+					ofType="com.baidu.netctoss.entity.TestEmp" 
+					select="findEmpsByDeptNo" column="dept_no">
+		</collection>			   
+	</resultMap>
+	<select id="findEmpsByDeptNo"
+			resultType="com.baidu.netctoss.entity.TestEmp"
+			parameterType="java.lang.Integer">
+		select * from test_emp 
+		where dept_no=#{no}
+	</select>
+	
+	<!-- 法2.通过一个复杂sql,取出所有数据，再全部建立映射 -->
+	<select id="findDeptByNo1"
+			parameterType="java.lang.Integer"
+			resultMap="deptMap1">
+		select *
+		from test_dept d join test_emp e 
+			on(d.dept_no=e.dept_no)
+		where d.dept_no=#{no}
+	</select>
+	<resultMap type="com.baidu.netctoss.entity.TestDept" 
+				  id="deptMap1">
+		<id property="dept_no" column="dept_no"/>
+		<result property="dname" column="dname"/>
+		<result property="loc" column="loc"/>
+		<collection property="emps" 
+					ofType="com.baidu.netctoss.entity.TestEmp">
+			<id property="id" column="id"/>
+			<result property="name" column="name"/>
+			<result property="sex" column="sex"/>
+			<result property="dept_no" column="dept_no"/>
+		</collection>
+	</resultMap>
+	
+</mapper>

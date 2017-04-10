@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//ibatis.apache.org//DTD Mapper 3.0//EN"      
+ "http://ibatis.apache.org/dtd/ibatis-3-mapper.dtd">
+<mapper namespace="com.baidu.netctoss.dao.RoleMapperDao">
+	<!-- 分页查出所有role信息,用1个sql语句 -->
+	<select id="findPage"
+			resultMap="roleInfo"
+			parameterType="com.baidu.netctoss.vo.Page">
+	select *
+	from   (select * 
+			from (select r.*, rownum rn
+				 from role_info r)
+			where rn&gt;=#{start} and rn&lt;#{end}
+			) t
+	left outer	join role_privilege p on(t.id=p.role_id)
+	<!-- 加left outer，当查询结果有id，name但没有role_privilege的结果时
+	，也显示role_info表部分 -->
+	</select>
+	<resultMap type="com.baidu.netctoss.entity.Role" id="roleInfo">
+		<id property="id" column="id"/>
+		<result property="name" column="name"/>
+		<collection property="role_privileges"
+			ofType="com.baidu.netctoss.entity.Role_Privilege">
+			<result property="role_id" column="role_id"/>
+			<result property="privilege_id" column="privilege_id"/>
+		</collection>
+	</resultMap>
+	
+	
+	<!-- 查出所有信息，用一个sql语句 -->
+	<select id="findRoles"
+			resultMap="roleInfo1">
+		select * 
+		from role_info r join role_privilege p on(r.id=p.role_id)
+	</select>
+	<resultMap type="com.baidu.netctoss.entity.Role" id="roleInfo1">
+		<id property="id" column="id"/>
+		<result property="name" column="name"/>
+		<collection property="role_privileges" 
+			ofType="com.baidu.netctoss.entity.Role_Privilege">
+			<result property="role_id" column="role_id"/>	
+			<!--此处若用id(主键)则不会反悔一个集合,因为主键不能重复,将只保留一个-->
+			<result property="privilege_id" column="privilege_id"/>
+		</collection>
+	</resultMap>
+	<!-- 通过id找到role，modi时加载用 -->
+	<select id="findById"
+			parameterType="java.lang.Integer"
+			resultMap="singleRole">
+		select *
+		from role_info r 
+		left outer join role_privilege p on (r.id=p.role_id)
+		where r.id=#{id}
+	</select>
+	<resultMap type="com.baidu.netctoss.entity.Role" id="singleRole">
+		<id property="id" column="id"/>
+		<result property="name" column="name"/>
+		<collection property="role_privileges" 
+				ofType="com.baidu.netctoss.entity.Role_Privilege">
+			<result property="role_id" column="role_id"/>
+			<result property="privilege_id" column="privilege_id"/>
+		</collection>
+	</resultMap>
+	
+	<!-- 根据id修改name，update时用 -->
+	<update id="updateById"
+			parameterType="com.baidu.netctoss.entity.Role">
+		update role_info 
+		set name=#{name}
+		where id=#{id}
+	</update>
+	<!-- 根据id删除所有之前的privilege,update时用 -->
+	<delete id="deletePriviByRoleId"
+			parameterType="java.lang.Integer">
+		delete from role_privilege
+		where role_id=#{role_id}
+	</delete>
+	<!-- 为同一个id添加新的privilege,update时用-->
+	<insert id="addPrivi"
+			parameterType="com.baidu.netctoss.entity.Role_Privilege">
+		insert into role_privilege
+		values (#{role_id},#{privilege_id})
+	</insert>
+</mapper>

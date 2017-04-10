@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" 
+		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		xmlns:tx="http://www.springframework.org/schema/tx" 
+		xmlns:aop="http://www.springframework.org/schema/aop"
+		xmlns:context="http://www.springframework.org/schema/context" 
+		xmlns:util="http://www.springframework.org/schema/util"
+		xsi:schemaLocation="
+			http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-2.5.xsd
+			http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-2.5.xsd
+			http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+			http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-2.5.xsd
+			http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-3.2.xsd">
+	<!-- 注入Properties文件，得到参数 -->
+	<util:properties id="dbParam" 
+		location="classpath:com/baidu/netctoss/config/db.properties">
+	</util:properties>
+	
+	<!-- 连接池,利用Properties文件注入参数值 -->
+	<bean id="dbcpDataSource" class="org.apache.commons.dbcp.BasicDataSource">
+		<property name="username" value="#{dbParam.username}"></property>
+		<property name="password" value="#{dbParam.password}"></property>
+		<property name="driverClassName" value="#{dbParam.driver}"></property>
+		<property name="url" value="#{dbParam.url}">
+		</property>
+	</bean>
+	
+	<bean id="sqlSessionFactory" 
+		class="org.mybatis.spring.SqlSessionFactoryBean">
+		<property name="dataSource" ref="dbcpDataSource"></property>
+		<property name="mapperLocations" 
+			value="classpath:com/baidu/netctoss/mapper/*.xml">
+		</property>
+	</bean>
+	
+	<bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+		<property name="basePackage" 
+				  value="com.baidu.netctoss.dao"></property>
+		<!-- 如果以上包中全部为mapper接口，annotationClass个可不用 -->
+		<!-- <property name="annotationClass" value=""></property>-->
+		<!-- 默认将sqlSessionFactory注入 -->
+ 	</bean>
+</beans>

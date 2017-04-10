@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//ibatis.apache.org//DTD Mapper 3.0//EN"      
+ "http://ibatis.apache.org/dtd/ibatis-3-mapper.dtd">
+<mapper namespace="com.baidu.netctoss.dao.CostMapperDao">
+	<select id="findPage" 
+		parameterType="com.baidu.netctoss.vo.Page"
+		resultType="com.baidu.netctoss.entity.Cost">
+		select *
+		from(select c.*,rownum rn
+			from (select * from cost order by id) c
+		) 
+		where rn&gt;=#{start} and rn&lt;#{end}
+		<!-- 会调用Page对象的getStart和getEnd方法 -->
+	</select>
+	<!-- 获取总条目数，用于计算总页数 -->
+	<select id="countRows" resultType="java.lang.Integer">
+		select count (*) from cost
+	</select>
+	
+	<insert id="insertFee" 
+			parameterType="com.baidu.netctoss.entity.Cost">
+		insert into cost 
+			(id,name,base_duration,base_cost,unit_cost,
+			status,descr,creatime,startime,cost_type)
+		values (cost_seq.nextval,#{name},
+				#{base_duration,jdbcType=NUMERIC},
+				#{base_cost,jdbcType=NUMERIC},
+				#{unit_cost,jdbcType=NUMERIC},
+				'1',#{descr},sysdate,null,#{cost_type})
+	</insert>
+	
+	<!-- 修改资费1，先通过传入的id到数据库查找 --><!--/查看资费详情 -->
+	<select id="findById" parameterType="java.lang.Integer"
+			resultType="com.baidu.netctoss.entity.Cost">
+		select * from cost where id=#{id}
+	</select>
+	<!-- 修改资费2，update填入信息到数据库 -->
+	<update id="updateById" 
+			parameterType="com.baidu.netctoss.entity.Cost">
+		update cost set 
+			name=#{name},cost_type=#{cost_type},
+			base_duration=#{base_duration,jdbcType=NUMERIC},
+			base_cost=#{base_cost,jdbcType=NUMERIC},
+			unit_cost=#{unit_cost,jdbcType=NUMERIC},
+			descr=#{descr}
+		where id=#{id}
+	</update><!-- 某些字段更新时可以为空，要加jdbcType指定 -->
+	
+	<!-- 删除资费 -->
+	<update id="deleteById" parameterType="java.lang.Integer">
+		delete from cost where id=#{id}
+	</update>
+	
+	<!-- 启用资费 -->
+	<update id="start" parameterType="java.lang.Integer">
+		update cost set status='0',startime=sysdate where id=#{id}
+	</update>
+
+	<!-- 查询资费：按类型+单价查询(若有) -->
+	<select id="findByConditions" 
+			parameterType="com.baidu.netctoss.entity.Cost"
+			resultType="com.baidu.netctoss.entity.Cost">
+		select * from cost 
+		<where>
+			<if test="cost_type!=null">
+				and cost_type=#{cost_type}
+			</if>
+			<choose>
+				<when test="unit_cost!=null">
+					and unit_cost>=#{unit_cost}
+				</when>
+				<otherwise>
+					and unit_cost>=0
+				</otherwise>
+			</choose>
+		</where>
+	</select>
+	<!-- 用foreach元素，按多个id查询 -->
+	<select id="findByIds"
+			parameterType="com.baidu.netctoss.entity.Cost"
+			resultType="com.baidu.netctoss.entity.Cost">
+		select * from cost
+		<if test="!ids.isEmpty()">
+			where id in
+			<!-- 先加判断，如果ids没有被赋值，则在声明时即初始化，是empty，
+			 OGNL支持调用属性拥有的的各种方法，同java-->
+			<!-- 通过传入Cost对象的ids属性作为集合，迭代其中每个元素 -->
+			<foreach collection="ids" item="id"
+					 open="(" close=")" separator=",">
+					 #{id}
+			</foreach>
+		</if>
+	</select>
+	
+	<!-- 找到所有已开启的，新增/修改service业务时下拉项 -->
+	<select id="findAllAvailable"
+			resultType="com.baidu.netctoss.entity.Cost">
+		select * from cost
+		where status='0'
+	</select>
+</mapper>
