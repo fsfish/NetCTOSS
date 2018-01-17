@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//ibatis.apache.org//DTD Mapper 3.0//EN"      
+ "http://ibatis.apache.org/dtd/ibatis-3-mapper.dtd">
+<mapper namespace="com.baidu.netctoss.dao.AccountMapperDao">
+	<!-- 通过条件查询/查询所有 -->
+	<select id="findPageByConditions" 
+			parameterType="com.baidu.netctoss.vo.AccountPage" 
+			resultType="com.baidu.netctoss.entity.Account">
+	select * 
+	from(select t.*,rownum rn from
+		(select * from account
+		<trim prefix="where" prefixOverrides="and|or">
+		<if test='idcard_no!=null and !idcard_no.isEmpty()'><!-- 若身份证号不为空 -->
+			and idcard_no=#{idcard_no}
+		</if>
+		<if test='real_name!=null and !"".equals(real_name)'><!-- 若姓名输入不为空 -->
+			and real_name=#{real_name}
+		</if>
+		<if test='login_name!=null and !login_name.isEmpty()'><!-- 若登录名不为空 -->
+			and login_name=#{login_name}
+		</if>
+		<if test='!"-1".equals(status)'><!--状态不是选全部时;若选全部status value=-1 -->
+			and status=#{status}
+		</if>
+		</trim>
+		order by id )t
+	)where rn&gt;=#{start} and rn&lt;#{end}
+	</select>
+	<select id="countRowsByConditions" 
+			parameterType="com.baidu.netctoss.vo.AccountPage"
+			resultType="java.lang.Integer">
+		select count(*) from account
+		<trim prefix="where" prefixOverrides="and|or">
+		<if test='idcard_no!=null and !idcard_no.isEmpty()'><!-- 若身份证号不为空 -->
+			and idcard_no=#{idcard_no}
+		</if>
+		<if test='real_name!=null and !"".equals(real_name)'><!-- 若姓名输入不为空 -->
+			and real_name=#{real_name}
+		</if>
+		<if test='login_name!=null and !login_name.isEmpty()'><!-- 若登录名不为空 -->
+			and login_name=#{login_name}
+		</if>
+		<if test='!"-1".equals(status)'><!--状态不是选全部时;若选全部status value=-1 -->
+			and status=#{status}
+		</if>
+		</trim>
+	</select>
+	<!-- 通过id删除 -->
+	<update id="deleteById"
+			parameterType="java.lang.Integer">
+			update account set status=2,close_date=sysdate 
+			where id=#{id}
+	</update>
+	<!-- 通过id进入修改页面/详情页面 -->
+	<select id="findById"
+			parameterType="java.lang.Integer"
+			resultType="com.baidu.netctoss.entity.Account">
+		select * from account where id=#{id}
+	</select>
+	<!-- 更新用户信息 -->
+	<update id="updateAccount" 
+			parameterType="com.baidu.netctoss.entity.Account">
+		update account set real_name=#{real_name},
+			telephone=#{telephone},email=#{email,jdbcType=VARCHAR},
+			occupation=#{occupation,jdbcType=VARCHAR},gender=#{gender,jdbcType=CHAR},
+			mailaddress=#{mailaddress,jdbcType=VARCHAR},zipcode=#{zipcode,jdbcType=CHAR},
+			qq=#{qq,jdbcType=VARCHAR} 
+		where id=#{id}
+	</update>
+	
+	<!-- 新增账户 -->
+	<insert id="addAccount"
+			parameterType="com.baidu.netctoss.entity.Account">
+		<selectKey order="BEFORE" keyProperty="id"
+				   resultType="java.lang.Integer">
+			select account_seq.nextval from dual
+		</selectKey>
+		insert into account
+		(id,real_name,idcard_no,login_name,
+		login_passwd,telephone,birthdate,
+		email,occupation,gender,mailaddress,
+		zipcode,qq,recommender_id,status,
+		create_date) 
+		values(#{id},#{real_name},#{idcard_no},
+		#{login_name},#{login_passwd},#{telephone},
+		#{birthdate,jdbcType=DATE},#{email,jdbcType=VARCHAR},
+		#{occupation,jdbcType=VARCHAR},#{gender},
+		#{mailaddress,jdbcType=VARCHAR},#{zipcode,jdbcType=CHAR},
+		#{qq,jdbcType=VARCHAR},#{recommender_id,jdbcType=NUMERIC},
+		'0',sysdate)
+	</insert>
+	<!-- 通过输入的推荐人身份证号找到推荐人id -->
+	<select id="findIdByIdcard"
+			parameterType="java.lang.String"
+			resultType="java.lang.Integer">
+		select id from account where idcard_no=#{idcard_no}
+	</select>
+	<!-- 根据输入的推荐人id找到推荐人身份证号 -->
+	<select id="findIdcardById"
+			parameterType="java.lang.Integer"
+			resultType="java.lang.String">
+		select idcard_no from account where id=#{id,jdbcType=NUMERIC}
+	</select>
+	<!-- 根据id将status从启动(0)切换为暂停(1)-->
+	<update id="pauseById"
+			parameterType="java.lang.Integer">
+		update account set status='1',pause_date=sysdate	
+		where id=#{id}
+	</update>
+	<!-- 根据id将status从暂停设置为启动 -->
+	<update id="startById"
+			parameterType="java.lang.Integer">
+		update account set status='0',pause_date=null
+		where id=#{id}
+	</update>
+	<!-- 根据身份证号找到account表中的id和login_name两项,
+		新增Service时check是否已有账户用 ,多个返回值，用HashMap接收-->
+	<select id="findByIdCard"
+			parameterType="java.lang.String"
+			resultType="java.util.HashMap">
+		select id,login_name 
+		from account 
+		where idcard_no=#{idcard_no}
+		<!-- login_name用于显示,id隐藏在表单里提交用,
+				service表需要account_id字段 -->
+	</select>
+</mapper>

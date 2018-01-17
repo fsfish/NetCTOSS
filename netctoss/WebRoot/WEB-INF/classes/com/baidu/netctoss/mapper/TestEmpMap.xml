@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//ibatis.apache.org//DTD Mapper 3.0//EN"      
+ "http://ibatis.apache.org/dtd/ibatis-3-mapper.dtd">
+<mapper namespace="com.baidu.netctoss.dao.TestEmpMapperDao">
+	<!-- 法一，通过多个sql语句 -->
+	<select id="findEmpsByDeptNo"
+			resultMap="empMap"
+			parameterType="java.lang.Integer">
+		select * from test_emp 
+		where dept_no=#{dept_no}
+	</select>
+	<select id="findDeptByDeptNo"
+			parameterType="java.lang.Integer"
+			resultType="com.baidu.netctoss.entity.TestDept">
+		select * from test_dept 
+		where dept_no=#{no}
+	</select>
+	
+	<resultMap id="empMap" 
+			   type="com.baidu.netctoss.entity.TestEmp">
+		<!-- 采用id=findDeptByDeptNo的查询，加载TestEmp对象的dept属性，
+			将TestEmp对象的dept_no属性当做查询参数，传进来 -->
+		<association property="dept" column="dept_no"
+			   select="findDeptByDeptNo">
+		</association>
+	</resultMap>
+	
+	<!-- 法2.通过一个复杂sql,取出所有数据，再全部建立映射 -->
+	<select id="findEmpsByDeptNo1"
+			parameterType="java.lang.Integer"
+			resultMap="empMap1">
+		select * 
+		from test_emp e join test_dept d on(e.dept_no=d.dept_no)
+		where e.dept_no=#{dept_no}
+	</select>
+	<resultMap type="com.baidu.netctoss.entity.TestEmp" 
+			   id="empMap1">
+		<!-- 逐个建立返回类型(TestEmp)的各个属性与查询结果的映射 -->
+		<id property="id" column="id"/><!--主键可用id标签,用result也可-->
+		<result property="name" column="name"/>
+		<result property="sex" column="sex"/>
+		<result property="dept_no" column="dept_no"/>
+		<association property="dept" column="dept_no" 
+			javaType="com.baidu.netctoss.entity.TestDept">
+			<id property="dept_no" column="dept_no"/>
+			<result property="dname" column="dname"/>
+			<result property="loc" column="loc"/>
+		</association>
+	</resultMap>
+</mapper>

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" 
+		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		xmlns:tx="http://www.springframework.org/schema/tx" 
+		xmlns:aop="http://www.springframework.org/schema/aop"
+		xmlns:context="http://www.springframework.org/schema/context" 
+		xmlns:mvc="http://www.springframework.org/schema/mvc"
+		xsi:schemaLocation="
+			http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-2.5.xsd
+			http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-2.5.xsd
+			http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+			http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-2.5.xsd
+			http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc-3.2.xsd">
+	<!-- 通过声明将LoggerBean类纳入容器 -->
+	<bean id="loggerBean" 
+		  class="com.baidu.netctoss.aspect.loggerBean"/>
+	<aop:config>
+		<!-- 将loggerBean指定为方面组件 -->
+		<aop:aspect id="loggerAspect" ref="loggerBean">
+			<!-- 指定前置通知类型,myLog方法在目标之前执行 -->
+			<!-- 将controller包及其子包的所有类所有方法当目标 -->
+			<aop:before method="mylog" 
+			pointcut="within(com.baidu.netctoss.controller..*)"/>
+		</aop:aspect>
+	</aop:config>
+	
+	<!-- 基于AOP注解，引入方面组件 -->
+	<!-- 开启AOP注册解析器 -->
+	<aop:aspectj-autoproxy/>
+</beans>
